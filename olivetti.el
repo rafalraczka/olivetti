@@ -159,6 +159,20 @@
 
 ;;; Options ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defcustom olivetti-global-modes
+  t
+  "Modes for which `olivetti-mode' is automatically turned on.
+Global Olivetti mode is controlled by the command
+`global-olivetti-mode'. This variable has effect only when global
+mode is enabled, it do not affect `olivetti-mode' toggled
+locally."
+  :type '(choice (const :tag "None" nil)
+                 (const :tag "All" t)
+                 (group :menu-tag "Mode specific" :tag "Modes"
+                        (radio (const :tag "Include modes" :include)
+                               (const :tag "Exclude modes" :exclude))
+                        (repeat (symbol :tag "Mode")))))
+
 (defcustom olivetti-mode-on-hook
   '(visual-line-mode)
   "Hook for `olivetti-mode', run after the mode is activated."
@@ -484,6 +498,26 @@ body width set with `olivetti-body-width'."
                                   olivetti--visual-line-mode
                                   olivetti--face-remap
                                   olivetti--split-window-preferred-function))))
+
+
+;;; Global mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun olivetti--turn-on-mode-if-desired ()
+  "Turn Olivetti mode according to `olivetti-global-modes' variable."
+  (when (and
+         (not (minibufferp))
+         (cond ((eq olivetti-global-modes t)
+                t)
+               ((eq (car-safe olivetti-global-modes) :exclude)
+                (not (memq major-mode (cadr olivetti-global-modes))))
+               ((eq (car-safe olivetti-global-modes) :include)
+                (memq major-mode (cadr olivetti-global-modes)))
+               (t
+                nil)))
+    (olivetti-mode 1)))
+
+;;;###autoload
+(define-globalized-minor-mode olivetti-global-mode olivetti-mode olivetti--turn-on-mode-if-desired)
 
 
 
